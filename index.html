@@ -1,158 +1,324 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Item Management Directory</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Stock Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1c2b28;
+    --ink-soft:#4c5a56;
+    --paper:#eef0ea;
+    --card:#ffffff;
+    --line:#d8dcd2;
+    --amber:#b8792a;
+    --amber-deep:#8f5c1c;
+    --teal:#2f6f62;
+    --rose:#a8492e;
+    --rose-bg:#f6e9e4;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px);
+    background-size: 100% 42px;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .slab{font-family:'Roboto Slab',serif;}
+
+  header.top{
+    background:var(--ink);
+    color:#f2efe6;
+    position:sticky;
+    top:0;
+    z-index:40;
+    box-shadow:0 2px 0 var(--amber);
+  }
+  .top-inner{
+    max-width:1200px;margin:0 auto;padding:18px 20px;
+    display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    width:34px;height:34px;border:2px solid var(--amber);border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Roboto Slab',serif;font-weight:700;color:var(--amber);font-size:15px;
+    transform:rotate(-4deg);
+  }
+  .brand h1{font-family:'Roboto Slab',serif;font-size:19px;font-weight:700;margin:0;letter-spacing:.2px;}
+  .brand span{display:block;font-size:11px;color:#b7bcb0;letter-spacing:.12em;text-transform:uppercase;}
+
+  .btn{
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;
+    padding:10px 16px;border-radius:6px;border:1px solid transparent;cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;transition:transform .08s ease, background .15s ease;
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--amber);color:#1c1206;}
+  .btn-primary:hover{background:var(--amber-deep);}
+  .btn-ghost{background:transparent;color:#eee9dc;border-color:#4a564f;}
+  .btn-ghost:hover{background:#2a3a35;}
+  .btn-outline{background:#fff;border:1px solid var(--line);color:var(--ink);}
+  .btn-outline:hover{border-color:var(--amber);}
+
+  main{max-width:1200px;margin:0 auto;padding:26px 20px 60px;}
+
+  .toolbar{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:16px;
+    display:flex;gap:14px;flex-wrap:wrap;align-items:center;
+    margin-bottom:22px;
+  }
+  .toolbar .field{flex:1 1 240px;min-width:200px;position:relative;}
+  .toolbar input, .toolbar select{
+    width:100%;padding:10px 12px 10px 36px;border:1px solid var(--line);border-radius:6px;
+    font-family:'Inter';font-size:14px;background:#fbfbf8;outline:none;
+  }
+  .toolbar select{padding-left:12px;}
+  .toolbar input:focus, .toolbar select:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(47,111,98,.12);}
+  .toolbar .field svg{position:absolute;left:11px;top:11px;width:16px;height:16px;color:#94998f;}
+
+  .summary-strip{
+    display:flex;gap:0;border:1px dashed var(--line);border-radius:8px;overflow:hidden;margin-bottom:22px;background:var(--card);
+  }
+  .summary-strip .cell{flex:1;padding:14px 18px;border-right:1px dashed var(--line);}
+  .summary-strip .cell:last-child{border-right:none;}
+  .summary-strip .label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);}
+  .summary-strip .value{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:19px;margin-top:2px;}
+
+  #itemsGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    display:flex;flex-direction:column;
+    position:relative;
+    transition:box-shadow .15s ease, transform .15s ease;
+  }
+  .card:hover{box-shadow:0 6px 18px rgba(28,43,40,.1);transform:translateY(-2px);}
+  .card .photo{height:150px;background:#e7e9e1;position:relative;overflow:hidden;}
+  .card .photo img{width:100%;height:100%;object-fit:cover;display:block;}
+  .stamp{
+    position:absolute;top:10px;right:-6px;
+    background:var(--ink);color:#f2efe6;
+    font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    padding:4px 10px 4px 12px;border-radius:3px 0 0 3px;
+    transform:rotate(2deg);
+    box-shadow:0 2px 4px rgba(0,0,0,.25);
+  }
+  .thumbs{display:flex;gap:5px;padding:8px 10px;overflow-x:auto;background:#f6f5ef;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+  .thumbs img{width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);flex-shrink:0;cursor:pointer;}
+  .card .body{padding:13px 14px 14px;display:flex;flex-direction:column;gap:10px;flex:1;}
+  .card h3{font-family:'Roboto Slab',serif;font-size:15.5px;margin:0;line-height:1.3;}
+  .card .rate-row{display:flex;justify-content:space-between;align-items:flex-end;padding-top:9px;border-top:1px dashed var(--line);}
+  .card .rate-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);}
+  .card .rate-value{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:18px;color:var(--teal);}
+  .card .actions{display:flex;gap:6px;}
+  .icon-btn{
+    width:32px;height:32px;border-radius:6px;border:1px solid var(--line);background:#fff;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);
+  }
+  .icon-btn:hover{border-color:var(--teal);color:var(--teal);}
+  .icon-btn.danger:hover{border-color:var(--rose);color:var(--rose);background:var(--rose-bg);}
+
+  .empty, .loading{
+    text-align:center;padding:60px 20px;background:var(--card);border:1px dashed var(--line);border-radius:8px;color:var(--ink-soft);
+  }
+  .empty svg{width:44px;height:44px;color:#c3c8ba;margin-bottom:10px;}
+
+  /* modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(20,26,22,.55);backdrop-filter:blur(2px);
+    display:flex;align-items:center;justify-content:center;padding:16px;z-index:50;
+  }
+  .overlay.hidden{display:none;}
+  .modal{
+    background:var(--card);border-radius:10px;max-width:480px;width:100%;
+    max-height:90vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.3);
+    border-top:4px solid var(--amber);
+  }
+  .modal-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line);}
+  .modal-head h2{font-family:'Roboto Slab',serif;font-size:18px;margin:0;}
+  .modal-close{background:none;border:none;cursor:pointer;color:#8b9089;padding:4px;}
+  .modal-close:hover{color:var(--ink);}
+  .modal form{padding:20px;display:flex;flex-direction:column;gap:15px;}
+  .modal label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
+  .modal input[type=text], .modal input[type=number], .modal select{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:14px;outline:none;background:#fbfbf8;
+  }
+  .modal input:focus, .modal select:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(47,111,98,.12);}
+  .row-between{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+  .link-btn{background:none;border:none;color:var(--teal);font-size:12.5px;font-weight:600;cursor:pointer;}
+  .link-btn:hover{text-decoration:underline;}
+  input[type=file]{font-size:13px;}
+  input[type=file]::file-selector-button{
+    background:#eef0ea;border:1px solid var(--line);border-radius:6px;padding:7px 12px;margin-right:10px;
+    font-family:'Inter';font-weight:600;font-size:12.5px;color:var(--ink);cursor:pointer;
+  }
+  .preview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px;}
+  .preview-grid.hidden{display:none;}
+  .preview-item{position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#eee;}
+  .preview-item img{width:100%;height:100%;object-fit:cover;}
+  .preview-item button{
+    position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--rose);color:#fff;
+    border:none;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .hint{font-size:11.5px;color:#8b9089;margin-top:6px;}
+
+  .group-row{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13.5px;}
+  .group-row + .group-row{margin-top:6px;}
+  .group-empty{font-size:12.5px;color:#8b9089;text-align:center;padding:14px;}
+
+  .toast-stack{position:fixed;bottom:18px;right:18px;z-index:70;display:flex;flex-direction:column;gap:8px;}
+  .toast{
+    background:var(--ink);color:#f2efe6;padding:11px 16px;border-radius:7px;font-size:13.5px;
+    box-shadow:0 8px 20px rgba(0,0,0,.25);border-left:3px solid var(--amber);max-width:320px;
+    animation:slidein .18s ease;
+  }
+  .toast.error{border-left-color:var(--rose);}
+  @keyframes slidein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  @media (prefers-reduced-motion: reduce){
+    .card, .toast{transition:none;animation:none;}
+  }
+</style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans min-h-screen">
+<body>
 
-  <!-- Header -->
-  <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-      <h1 class="text-2xl font-bold tracking-tight flex items-center gap-2">
-        <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-        Item Directory
-      </h1>
-      <div class="flex gap-2 w-full md:w-auto">
-        <button id="openGroupModalBtn" class="w-1/2 md:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2 shadow-md text-sm">
-          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
-          Manage Groups
-        </button>
-        <button id="openModalBtn" class="w-1/2 md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2 shadow-md text-sm">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          Add New Item
-        </button>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <div class="brand-mark">SR</div>
+      <div>
+        <h1>Stock Register</h1>
+        <span>Items &amp; Purchase Rates</span>
       </div>
     </div>
-  </header>
+    <div style="display:flex;gap:8px;">
+      <button id="openGroupModalBtn" class="btn btn-ghost">Manage Groups</button>
+      <button id="openModalBtn" class="btn btn-primary">+ Add Item</button>
+    </div>
+  </div>
+</header>
 
-  <!-- Main Container -->
-  <main class="max-w-7xl mx-auto px-4 py-8">
-    <section class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="relative md:col-span-2">
-          <input type="text" id="searchInput" placeholder="Search by item name..." class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" />
-          <svg class="w-5 h-5 absolute left-3 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-        </div>
-        <div>
-          <select id="groupFilter" class="w-full py-2.5 px-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
-            <option value="ALL">All Party Groups</option>
-          </select>
-        </div>
+<main>
+  <div class="toolbar">
+    <div class="field" style="flex:2 1 320px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input type="text" id="searchInput" placeholder="Search items…" autocomplete="off" />
+    </div>
+    <div class="field">
+      <select id="groupFilter"><option value="ALL">All party groups</option></select>
+    </div>
+  </div>
+
+  <div class="summary-strip" id="summaryStrip"></div>
+
+  <div id="loadingState" class="loading">Loading register…</div>
+  <div id="itemsGrid" style="display:none;"></div>
+  <div id="emptyState" class="empty" style="display:none;">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+    <p id="emptyMessage">Nothing in the register yet — add your first item.</p>
+  </div>
+</main>
+
+<!-- Item modal -->
+<div id="itemModal" class="overlay hidden">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">Add item</h2>
+      <button class="modal-close" data-close="itemModal" aria-label="Close">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form id="addItemForm">
+      <input type="hidden" id="itemId" />
+      <div>
+        <label for="itemName">Item name</label>
+        <input type="text" id="itemName" required placeholder="e.g. Wireless Mouse" maxlength="120" />
       </div>
-    </section>
-
-    <section>
-      <div id="itemsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
-      <div id="emptyState" class="hidden text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
-        <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-        <p class="text-gray-500 font-medium">No items found matching your criteria.</p>
+      <div>
+        <label for="purchaseRate">Purchase rate (₹)</label>
+        <input type="number" step="0.01" min="0" id="purchaseRate" required placeholder="0.00" />
       </div>
-    </section>
-  </main>
-
-  <!-- Add / Edit Item Modal -->
-  <div id="itemModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center mb-6 border-b pb-3">
-        <h2 id="modalTitle" class="text-xl font-bold text-gray-900">Add New Item</h2>
-        <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
+      <div>
+        <div class="row-between">
+          <label style="margin:0;">Party group</label>
+          <button type="button" id="quickAddGroupBtn" class="link-btn">+ New group</button>
+        </div>
+        <select id="partyGroup"><option value="General">General</option></select>
       </div>
+      <div>
+        <label for="imageInput">Photos</label>
+        <input type="file" id="imageInput" multiple accept="image/*" />
+        <div id="imagePreviewContainer" class="preview-grid hidden"></div>
+        <p class="hint">Photos are compressed automatically to keep the record light.</p>
+      </div>
+      <button type="submit" id="saveBtn" class="btn btn-primary" style="justify-content:center;">Save item</button>
+    </form>
+  </div>
+</div>
 
-      <form id="addItemForm" class="space-y-4">
-        <input type="hidden" id="itemId" value="" />
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
-          <input type="text" id="itemName" required placeholder="e.g. Wireless Mouse" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Purchase Rate (₹)</label>
-          <input type="number" step="0.01" id="purchaseRate" required placeholder="0.00" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
-        </div>
-
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label class="block text-sm font-medium text-gray-700">Party Group</label>
-            <button type="button" id="quickAddGroupBtn" class="text-xs text-indigo-600 hover:underline font-medium">+ Add New Group</button>
-          </div>
-          <select id="partyGroup" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-            <option value="">Select Group (Optional)</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Item Images (Multiple photos)</label>
-          <input type="file" id="imageInput" multiple accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer mb-2" />
-          
-          <div id="imagePreviewContainer" class="grid grid-cols-4 gap-2 pt-2 border-t hidden"></div>
-          <p class="text-xs text-gray-400 mt-1">Photos will automatically auto-adjust size to fit under 1MB total limit.</p>
-        </div>
-
-        <button type="submit" id="saveBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition shadow">
-          Save Item
-        </button>
+<!-- Group modal -->
+<div id="groupModal" class="overlay hidden">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head">
+      <h2>Party groups</h2>
+      <button class="modal-close" data-close="groupModal" aria-label="Close">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div style="padding:20px;">
+      <form id="addGroupForm" style="display:flex;gap:8px;margin-bottom:16px;">
+        <input type="text" id="newGroupName" required placeholder="New group name" maxlength="60" style="flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:6px;font-family:'Inter';font-size:13.5px;" />
+        <button type="submit" class="btn btn-primary">Add</button>
       </form>
+      <div id="groupsList" style="max-height:220px;overflow-y:auto;"></div>
     </div>
   </div>
+</div>
 
-  <!-- Manage Party Groups Modal -->
-  <div id="groupModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl relative">
-      <div class="flex justify-between items-center mb-4 border-b pb-3">
-        <h2 class="text-lg font-bold text-gray-900">Manage Party Groups</h2>
-        <button id="closeGroupModalBtn" class="text-gray-400 hover:text-gray-600">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
+<!-- Delete confirm -->
+<div id="deleteModal" class="overlay hidden" style="z-index:60;">
+  <div class="modal" style="max-width:360px;text-align:center;border-top-color:var(--rose);">
+    <div style="padding:24px 22px;">
+      <div style="width:44px;height:44px;border-radius:50%;background:var(--rose-bg);color:var(--rose);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;">
+        <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
       </div>
-
-      <form id="addGroupForm" class="flex gap-2 mb-6">
-        <input type="text" id="newGroupName" required placeholder="Enter group name..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
-        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition">Add</button>
-      </form>
-
-      <h3 class="text-xs font-semibold uppercase text-gray-400 mb-2">Existing Groups</h3>
-      <div id="groupsList" class="max-h-48 overflow-y-auto space-y-1.5 border rounded-lg p-2 bg-gray-50"></div>
-    </div>
-  </div>
-
-  <!-- Delete Modal -->
-  <div id="deleteModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
-      <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-500 mx-auto flex items-center justify-center text-xl mb-4">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-      </div>
-      <h3 class="text-lg font-bold text-gray-900 mb-1">Are you sure?</h3>
-      <p id="deleteModalMessage" class="text-sm text-gray-500 mb-6">This item will be permanently removed.</p>
-      <div class="flex gap-3">
-        <button id="cancelDeleteBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-xl transition text-sm">Cancel</button>
-        <button id="confirmDeleteBtn" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-medium py-2.5 rounded-xl transition text-sm shadow-md">Delete</button>
+      <h3 class="slab" style="margin:0 0 6px;font-size:16.5px;">Remove this record?</h3>
+      <p id="deleteModalMessage" style="font-size:13.5px;color:var(--ink-soft);margin:0 0 20px;">This cannot be undone.</p>
+      <div style="display:flex;gap:10px;">
+        <button id="cancelDeleteBtn" class="btn btn-outline" style="flex:1;justify-content:center;">Cancel</button>
+        <button id="confirmDeleteBtn" class="btn" style="flex:1;justify-content:center;background:var(--rose);color:#fff;">Delete</button>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Firebase JavaScript Module -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { 
-      getFirestore, 
-      collection, 
-      addDoc, 
-      doc, 
-      updateDoc, 
-      deleteDoc, 
-      onSnapshot, 
-      query, 
-      orderBy 
-    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+<div class="toast-stack" id="toastStack"></div>
 
-    const firebaseConfig = {
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, doc, updateDoc, deleteDoc,
+  onSnapshot, query, orderBy
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+// NOTE: this config is safe to expose client-side, but make sure your
+// Firestore Security Rules actually restrict who can read/write —
+// the API key alone does not protect your data.
+const firebaseConfig = {
   apiKey: "AIzaSyB0ldphifJBVDNZdIXaz4QTJ98e_hSRYfg",
   authDomain: "rate-bf39a.firebaseapp.com",
   projectId: "rate-bf39a",
@@ -161,415 +327,435 @@
   appId: "1:898189513913:web:7b5005b37bb49d7098f768"
 };
 
-    let db;
-    let itemsCollection;
-    let groupsCollection;
+const PLACEHOLDER_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="100%" height="100%" fill="#e7e9e1"/><text x="50%" y="50%" font-family="sans-serif" font-size="13" fill="#9aa093" text-anchor="middle" dy=".3em">No photo</text></svg>`
+);
 
-    try {
-      const app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
-      itemsCollection = collection(db, "items");
-      groupsCollection = collection(db, "party_groups");
-    } catch (err) {
-      console.error("Firebase Initialization Error:", err);
-    }
+let db, itemsCollection, groupsCollection;
+try {
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  itemsCollection = collection(db, "items");
+  groupsCollection = collection(db, "party_groups");
+} catch (err) {
+  console.error("Firebase init error:", err);
+  showToast("Could not connect to the database.", true);
+}
 
-    let itemsData = [];
-    let groupsData = [];
-    let selectedImageFiles = [];
-    let deleteTarget = { id: null, type: null };
+let itemsData = [];
+let groupsData = [];
+let selectedImageFiles = [];
+let deleteTarget = { id: null, type: null };
+let itemsLoaded = false;
 
-    const itemsGrid = document.getElementById("itemsGrid");
-    const emptyState = document.getElementById("emptyState");
-    const searchInput = document.getElementById("searchInput");
-    const groupFilter = document.getElementById("groupFilter");
-    
-    const itemModal = document.getElementById("itemModal");
-    const openModalBtn = document.getElementById("openModalBtn");
-    const closeModalBtn = document.getElementById("closeModalBtn");
-    const addItemForm = document.getElementById("addItemForm");
-    const modalTitle = document.getElementById("modalTitle");
-    const itemIdInput = document.getElementById("itemId");
-    const partyGroupSelect = document.getElementById("partyGroup");
-    const imageInput = document.getElementById("imageInput");
-    const imagePreviewContainer = document.getElementById("imagePreviewContainer");
+const $ = (id) => document.getElementById(id);
+const itemsGrid = $("itemsGrid");
+const loadingState = $("loadingState");
+const emptyState = $("emptyState");
+const emptyMessage = $("emptyMessage");
+const searchInput = $("searchInput");
+const groupFilter = $("groupFilter");
+const summaryStrip = $("summaryStrip");
 
-    const groupModal = document.getElementById("groupModal");
-    const openGroupModalBtn = document.getElementById("openGroupModalBtn");
-    const closeGroupModalBtn = document.getElementById("closeGroupModalBtn");
-    const addGroupForm = document.getElementById("addGroupForm");
-    const newGroupNameInput = document.getElementById("newGroupName");
-    const groupsList = document.getElementById("groupsList");
-    const quickAddGroupBtn = document.getElementById("quickAddGroupBtn");
+const itemModal = $("itemModal");
+const addItemForm = $("addItemForm");
+const modalTitle = $("modalTitle");
+const itemIdInput = $("itemId");
+const partyGroupSelect = $("partyGroup");
+const imageInput = $("imageInput");
+const imagePreviewContainer = $("imagePreviewContainer");
 
-    const deleteModal = document.getElementById("deleteModal");
-    const deleteModalMessage = document.getElementById("deleteModalMessage");
-    const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
-    const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+const groupModal = $("groupModal");
+const addGroupForm = $("addGroupForm");
+const newGroupNameInput = $("newGroupName");
+const groupsList = $("groupsList");
 
-    openModalBtn.addEventListener("click", () => {
-      resetModalForm();
-      itemModal.classList.remove("hidden");
-    });
-    closeModalBtn.addEventListener("click", () => itemModal.classList.add("hidden"));
+const deleteModal = $("deleteModal");
+const deleteModalMessage = $("deleteModalMessage");
 
-    openGroupModalBtn.addEventListener("click", () => groupModal.classList.remove("hidden"));
-    quickAddGroupBtn.addEventListener("click", () => groupModal.classList.remove("hidden"));
-    closeGroupModalBtn.addEventListener("click", () => groupModal.classList.add("hidden"));
+function escapeHtml(str) {
+  return String(str ?? "").replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
 
-    cancelDeleteBtn.addEventListener("click", () => {
-      deleteModal.classList.add("hidden");
-      deleteTarget = { id: null, type: null };
-    });
+function showToast(message, isError = false) {
+  const el = document.createElement("div");
+  el.className = "toast" + (isError ? " error" : "");
+  el.textContent = message;
+  $("toastStack").appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
 
-    function resetModalForm() {
-      addItemForm.reset();
-      itemIdInput.value = "";
-      selectedImageFiles = [];
-      renderImagePreviews();
-      modalTitle.innerText = "Add New Item";
-    }
+function openOverlay(el) { el.classList.remove("hidden"); document.addEventListener("keydown", escCloser); }
+function closeOverlay(el) { el.classList.add("hidden"); document.removeEventListener("keydown", escCloser); }
+function escCloser(e) {
+  if (e.key !== "Escape") return;
+  [itemModal, groupModal, deleteModal].forEach(m => { if (!m.classList.contains("hidden")) closeOverlay(m); });
+}
+document.querySelectorAll(".overlay").forEach(ov => {
+  ov.addEventListener("click", (e) => { if (e.target === ov) closeOverlay(ov); });
+});
+document.querySelectorAll("[data-close]").forEach(btn => {
+  btn.addEventListener("click", () => closeOverlay($(btn.dataset.close)));
+});
 
-    imageInput.addEventListener("change", (e) => {
-      const files = Array.from(e.target.files || []);
-      if (files.length > 0) {
-        selectedImageFiles = [...selectedImageFiles, ...files];
-        renderImagePreviews();
-      }
-      imageInput.value = "";
-    });
+$("openModalBtn").addEventListener("click", () => { resetModalForm(); openOverlay(itemModal); });
+$("openGroupModalBtn").addEventListener("click", () => openOverlay(groupModal));
+$("quickAddGroupBtn").addEventListener("click", () => openOverlay(groupModal));
+$("cancelDeleteBtn").addEventListener("click", () => {
+  closeOverlay(deleteModal);
+  deleteTarget = { id: null, type: null };
+});
 
-    function renderImagePreviews() {
-      imagePreviewContainer.innerHTML = "";
-      if (selectedImageFiles.length === 0) {
-        imagePreviewContainer.classList.add("hidden");
-        return;
-      }
+function resetModalForm() {
+  addItemForm.reset();
+  itemIdInput.value = "";
+  selectedImageFiles = [];
+  renderImagePreviews();
+  modalTitle.textContent = "Add item";
+  partyGroupSelect.value = "General";
+}
 
-      imagePreviewContainer.classList.remove("hidden");
+imageInput.addEventListener("change", (e) => {
+  const files = Array.from(e.target.files || []);
+  if (files.length) {
+    selectedImageFiles = [...selectedImageFiles, ...files];
+    renderImagePreviews();
+  }
+  imageInput.value = "";
+});
 
-      selectedImageFiles.forEach((item, index) => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "relative rounded-lg overflow-hidden border border-gray-200 aspect-square bg-gray-100";
+function renderImagePreviews() {
+  imagePreviewContainer.innerHTML = "";
+  if (!selectedImageFiles.length) {
+    imagePreviewContainer.classList.add("hidden");
+    return;
+  }
+  imagePreviewContainer.classList.remove("hidden");
+  selectedImageFiles.forEach((item, index) => {
+    const wrap = document.createElement("div");
+    wrap.className = "preview-item";
+    const img = document.createElement("img");
+    img.src = typeof item === "string" ? item : URL.createObjectURL(item);
+    const rm = document.createElement("button");
+    rm.type = "button";
+    rm.textContent = "×";
+    rm.setAttribute("aria-label", "Remove photo");
+    rm.onclick = () => { selectedImageFiles.splice(index, 1); renderImagePreviews(); };
+    wrap.append(img, rm);
+    imagePreviewContainer.appendChild(wrap);
+  });
+}
 
-        const img = document.createElement("img");
-        img.className = "w-full h-full object-cover";
-        img.src = typeof item === 'string' ? item : URL.createObjectURL(item);
+const compressSingleImage = (item, maxWidth, quality) => new Promise((resolve, reject) => {
+  if (typeof item === "string") return resolve(item);
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = reject;
+    img.src = e.target.result;
+  };
+  reader.onerror = reject;
+  reader.readAsDataURL(item);
+});
 
-        const removeBtn = document.createElement("button");
-        removeBtn.type = "button";
-        removeBtn.className = "absolute top-1 right-1 bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs shadow hover:bg-rose-700 transition";
-        removeBtn.innerText = "×";
-        removeBtn.onclick = () => {
-          selectedImageFiles.splice(index, 1);
-          renderImagePreviews();
-        };
+async function compressImagesToFitLimit(filesList) {
+  const count = filesList.length;
+  let maxWidth = 800, quality = 0.7;
+  if (count > 12) { maxWidth = 250; quality = 0.25; }
+  else if (count > 8) { maxWidth = 350; quality = 0.35; }
+  else if (count > 4) { maxWidth = 450; quality = 0.5; }
+  else if (count > 2) { maxWidth = 600; quality = 0.6; }
 
-        wrapper.appendChild(img);
-        wrapper.appendChild(removeBtn);
-        imagePreviewContainer.appendChild(wrapper);
-      });
-    }
+  let results = await Promise.all(filesList.map(f => compressSingleImage(f, maxWidth, quality)));
+  let totalBytes = new Blob([JSON.stringify(results)]).size;
+  while (totalBytes > 850 * 1024 && maxWidth > 150) {
+    maxWidth -= 50; quality = Math.max(0.05, quality - 0.05);
+    results = await Promise.all(filesList.map(f => compressSingleImage(f, maxWidth, quality)));
+    totalBytes = new Blob([JSON.stringify(results)]).size;
+  }
+  return results;
+}
 
-    // Helper: Single Image Compress
-    const compressSingleImage = (item, maxWidth, quality) => {
-      return new Promise((resolve, reject) => {
-        if (typeof item === 'string') return resolve(item);
-        
-        const reader = new FileReader();
-        reader.readAsDataURL(item);
-        reader.onload = (e) => {
-          const img = new Image();
-          img.src = e.target.result;
-          img.onload = () => {
-            const canvas = document.createElement("canvas");
-            let width = img.width;
-            let height = img.height;
+addItemForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!itemsCollection) return showToast("Not connected to the database.", true);
 
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
+  const saveBtn = $("saveBtn");
+  saveBtn.disabled = true;
+  const originalLabel = saveBtn.textContent;
+  saveBtn.textContent = "Saving…";
 
-            canvas.width = width;
-            canvas.height = height;
+  try {
+    const id = itemIdInput.value || null;
+    const name = $("itemName").value.trim();
+    const rate = parseFloat($("purchaseRate").value);
+    const group = partyGroupSelect.value || "General";
 
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL("image/jpeg", quality));
-          };
-          img.onerror = (err) => reject(err);
-        };
-        reader.onerror = (err) => reject(err);
-      });
+    if (!name) throw new Error("Item name is required.");
+    if (!Number.isFinite(rate) || rate < 0) throw new Error("Enter a valid purchase rate.");
+
+    let imagesBase64 = [];
+    if (selectedImageFiles.length) imagesBase64 = await compressImagesToFitLimit(selectedImageFiles);
+
+    const payload = {
+      name,
+      purchaseRate: rate,
+      partyGroup: group,
+      images: imagesBase64.length ? imagesBase64 : []
     };
 
-    // Smart Dynamic Compression: Divides image resolutions & quality proportionally to fit under 800 KB safely
-    const compressImagesToFitLimit = async (filesList) => {
-      const count = filesList.length;
-      let maxWidth = 800;
-      let quality = 0.7;
+    if (id) {
+      await updateDoc(doc(db, "items", id), payload);
+      showToast("Item updated.");
+    } else {
+      payload.createdAt = new Date().toISOString();
+      await addDoc(itemsCollection, payload);
+      showToast("Item added.");
+    }
+    resetModalForm();
+    closeOverlay(itemModal);
+  } catch (error) {
+    console.error("Save error:", error);
+    showToast(error.message || "Could not save item.", true);
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = originalLabel;
+  }
+});
 
-      // Adjust settings dynamically based on image count
-      if (count > 12) {
-        maxWidth = 250;
-        quality = 0.25;
-      } else if (count > 8) {
-        maxWidth = 350;
-        quality = 0.35;
-      } else if (count > 4) {
-        maxWidth = 450;
-        quality = 0.5;
-      } else if (count > 2) {
-        maxWidth = 600;
-        quality = 0.6;
-      }
+addGroupForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const groupName = newGroupNameInput.value.trim();
+  if (!groupName || !groupsCollection) return;
+  if (groupsData.some(g => (g.name || "").toLowerCase() === groupName.toLowerCase())) {
+    return showToast("That group already exists.", true);
+  }
+  try {
+    await addDoc(groupsCollection, { name: groupName, createdAt: new Date().toISOString() });
+    newGroupNameInput.value = "";
+    showToast("Group added.");
+  } catch (error) {
+    showToast("Could not add group: " + error.message, true);
+  }
+});
 
-      let compressedResults = await Promise.all(
-        filesList.map(file => compressSingleImage(file, maxWidth, quality))
-      );
+if (groupsCollection) {
+  onSnapshot(query(groupsCollection, orderBy("name", "asc")), (snapshot) => {
+    groupsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderGroupsUI();
+  }, (err) => { console.error("Groups sync error:", err); showToast("Could not load groups.", true); });
+}
 
-      // Verify payload total size under 850 KB limit
-      let totalBytes = new Blob([JSON.stringify(compressedResults)]).size;
-      
-      // Secondary fallback loop if size still exceeds threshold
-      while (totalBytes > 850 * 1024 && maxWidth > 150) {
-        maxWidth -= 50;
-        quality -= 0.05;
-        compressedResults = await Promise.all(
-          filesList.map(file => compressSingleImage(file, maxWidth, quality))
-        );
-        totalBytes = new Blob([JSON.stringify(compressedResults)]).size;
-      }
+function renderGroupsUI() {
+  const currentFilter = groupFilter.value;
+  const currentForm = partyGroupSelect.value;
 
-      return compressedResults;
-    };
+  groupFilter.innerHTML = '<option value="ALL">All party groups</option><option value="General">General</option>';
+  partyGroupSelect.innerHTML = '<option value="General">General</option>';
+  groupsList.innerHTML = "";
 
-    // Firebase Save Logic
-    addItemForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!itemsCollection) return;
+  if (!groupsData.length) {
+    groupsList.innerHTML = '<div class="group-empty">No party groups yet — items default to "General".</div>';
+  }
 
-      const saveBtn = document.getElementById("saveBtn");
-      saveBtn.disabled = true;
-      saveBtn.innerText = "Compressing & Saving...";
+  groupsData.forEach(group => {
+    const name = group.name || "Unassigned";
+    groupFilter.add(new Option(name, name));
+    partyGroupSelect.add(new Option(name, name));
 
-      try {
-        const id = itemIdInput.value || null;
-        const name = document.getElementById("itemName").value || "";
-        const rate = parseFloat(document.getElementById("purchaseRate").value) || 0;
-        const group = partyGroupSelect.value || "General";
+    const row = document.createElement("div");
+    row.className = "group-row";
+    const label = document.createElement("span");
+    label.textContent = name;
+    const btn = document.createElement("button");
+    btn.className = "icon-btn danger";
+    btn.style.width = "28px"; btn.style.height = "28px";
+    btn.setAttribute("aria-label", `Delete group ${name}`);
+    btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>';
+    btn.addEventListener("click", () => promptDeleteGroup(group.id, name));
+    row.append(label, btn);
+    groupsList.appendChild(row);
+  });
 
-        let imagesBase64 = [];
-        if (selectedImageFiles.length > 0) {
-          imagesBase64 = await compressImagesToFitLimit(selectedImageFiles);
-        }
+  if (currentFilter) groupFilter.value = currentFilter;
+  if (currentForm) partyGroupSelect.value = currentForm;
+}
 
-        const payload = {
-          name: name,
-          purchaseRate: rate,
-          partyGroup: group,
-          images: imagesBase64.length > 0 ? imagesBase64 : ["https://via.placeholder.com/300x200?text=No+Image"]
-        };
+function promptDeleteGroup(id, name) {
+  const inUse = itemsData.filter(i => i.partyGroup === name).length;
+  deleteTarget = { id, type: "group" };
+  deleteModalMessage.textContent = inUse
+    ? `${inUse} item${inUse === 1 ? "" : "s"} use "${name}". They'll move to "General" if you delete it.`
+    : `Delete the party group "${name}"? This cannot be undone.`;
+  openOverlay(deleteModal);
+}
 
-        if (id) {
-          await updateDoc(doc(db, "items", id), payload);
-        } else {
-          payload.createdAt = new Date().toISOString();
-          await addDoc(itemsCollection, payload);
-        }
+function promptDeleteItem(id, name) {
+  deleteTarget = { id, type: "item" };
+  deleteModalMessage.textContent = `Delete "${name}" from the register?`;
+  openOverlay(deleteModal);
+}
 
-        resetModalForm();
-        itemModal.classList.add("hidden");
-      } catch (error) {
-        console.error("Save error:", error);
-        alert("Error saving item: " + error.message);
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.innerText = "Save Item";
-      }
-    });
+$("confirmDeleteBtn").addEventListener("click", async () => {
+  if (!deleteTarget.id || !deleteTarget.type || !db) return;
+  const { id, type } = deleteTarget;
+  const btn = $("confirmDeleteBtn");
+  btn.disabled = true;
+  try {
+    if (type === "item") {
+      await deleteDoc(doc(db, "items", id));
+      showToast("Item deleted.");
+    } else if (type === "group") {
+      const group = groupsData.find(g => g.id === id);
+      const groupName = group?.name;
+      const affected = itemsData.filter(i => i.partyGroup === groupName);
+      await Promise.all(affected.map(i => updateDoc(doc(db, "items", i.id), { partyGroup: "General" })));
+      await deleteDoc(doc(db, "party_groups", id));
+      showToast("Group deleted.");
+    }
+  } catch (error) {
+    showToast("Delete failed: " + error.message, true);
+  } finally {
+    btn.disabled = false;
+    closeOverlay(deleteModal);
+    deleteTarget = { id: null, type: null };
+  }
+});
 
-    // Group Submit
-    addGroupForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const groupName = newGroupNameInput.value.trim();
-      if (!groupName || !groupsCollection) return;
+if (itemsCollection) {
+  onSnapshot(query(itemsCollection, orderBy("createdAt", "desc")), (snapshot) => {
+    itemsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    itemsLoaded = true;
+    loadingState.style.display = "none";
+    renderItems();
+  }, (err) => {
+    console.error("Items sync error:", err);
+    loadingState.textContent = "Could not load the register.";
+    showToast("Could not load items.", true);
+  });
+}
 
-      try {
-        await addDoc(groupsCollection, {
-          name: groupName,
-          createdAt: new Date().toISOString()
-        });
-        newGroupNameInput.value = "";
-      } catch (error) {
-        alert("Group save error: " + error.message);
-      }
-    });
+let searchDebounce;
+searchInput.addEventListener("input", () => {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(renderItems, 150);
+});
+groupFilter.addEventListener("change", renderItems);
 
-    if (groupsCollection) {
-      const groupsQuery = query(groupsCollection, orderBy("name", "asc"));
-      onSnapshot(groupsQuery, (snapshot) => {
-        groupsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderGroupsUI();
-      }, err => console.error("Groups Sync Error:", err));
+function renderSummary(items) {
+  const total = items.length;
+  const avg = total ? items.reduce((s, i) => s + (i.purchaseRate || 0), 0) / total : 0;
+  const groupsUsed = new Set(items.map(i => i.partyGroup || "General")).size;
+  summaryStrip.innerHTML = `
+    <div class="cell"><div class="label">Items shown</div><div class="value mono">${total}</div></div>
+    <div class="cell"><div class="label">Avg. purchase rate</div><div class="value mono">₹${avg.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div></div>
+    <div class="cell"><div class="label">Party groups in view</div><div class="value mono">${groupsUsed}</div></div>
+  `;
+}
+
+function renderItems() {
+  if (!itemsLoaded) return;
+  const term = searchInput.value.trim().toLowerCase();
+  const selectedGroup = groupFilter.value;
+
+  const filtered = itemsData.filter(item => {
+    const name = (item.name || "").toLowerCase();
+    const group = item.partyGroup || "General";
+    const matchesSearch = name.includes(term);
+    const matchesGroup = selectedGroup === "ALL" || group === selectedGroup;
+    return matchesSearch && matchesGroup;
+  });
+
+  renderSummary(filtered);
+  itemsGrid.innerHTML = "";
+
+  if (!filtered.length) {
+    itemsGrid.style.display = "none";
+    emptyState.style.display = "block";
+    emptyMessage.textContent = itemsData.length
+      ? "No items match your search or filter."
+      : "Nothing in the register yet — add your first item.";
+    return;
+  }
+  emptyState.style.display = "none";
+  itemsGrid.style.display = "grid";
+
+  filtered.forEach(item => {
+    const images = Array.isArray(item.images) && item.images.length ? item.images : [PLACEHOLDER_IMG];
+    const rate = typeof item.purchaseRate === "number" ? item.purchaseRate : 0;
+    const groupName = item.partyGroup || "General";
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const photo = document.createElement("div");
+    photo.className = "photo";
+    photo.innerHTML = `<img src="${images[0]}" alt="${escapeHtml(item.name || 'Item')}" loading="lazy" />
+      <span class="stamp">${escapeHtml(groupName)}</span>`;
+    card.appendChild(photo);
+
+    if (images.length > 1) {
+      const thumbs = document.createElement("div");
+      thumbs.className = "thumbs";
+      images.forEach((src, idx) => {
+        const t = document.createElement("img");
+        t.src = src;
+        t.alt = `Photo ${idx + 1}`;
+        t.addEventListener("click", () => { photo.querySelector("img").src = src; });
+        thumbs.appendChild(t);
+      });
+      card.appendChild(thumbs);
     }
 
-    function renderGroupsUI() {
-      const currentFilterSelection = groupFilter.value;
-      const currentFormSelection = partyGroupSelect.value;
-
-      groupFilter.innerHTML = '<option value="ALL">All Party Groups</option>';
-      partyGroupSelect.innerHTML = '<option value="">Select Group (Optional)</option>';
-      groupsList.innerHTML = "";
-
-      if (groupsData.length === 0) {
-        groupsList.innerHTML = '<p class="text-xs text-gray-400 py-2 text-center">No party groups added yet.</p>';
-      }
-
-      groupsData.forEach(group => {
-        const groupName = group.name || "Unassigned";
-
-        groupFilter.add(new Option(groupName, groupName));
-        partyGroupSelect.add(new Option(groupName, groupName));
-
-        const groupRow = document.createElement("div");
-        groupRow.className = "flex justify-between items-center bg-white p-2 rounded border text-sm text-gray-700";
-        groupRow.innerHTML = `
-          <span>${groupName}</span>
-          <button onclick="promptDeleteGroup('${group.id}')" class="text-rose-500 hover:text-rose-700 p-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+    const body = document.createElement("div");
+    body.className = "body";
+    body.innerHTML = `
+      <h3>${escapeHtml(item.name || "Unnamed item")}</h3>
+      <div class="rate-row">
+        <div>
+          <div class="rate-label">Purchase rate</div>
+          <div class="rate-value">₹${rate.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+        </div>
+        <div class="actions">
+          <button class="icon-btn" aria-label="Edit item" data-edit="${item.id}">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
           </button>
-        `;
-        groupsList.appendChild(groupRow);
-      });
+          <button class="icon-btn danger" aria-label="Delete item" data-delete="${item.id}">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+    body.querySelector("[data-edit]").addEventListener("click", () => editItem(item.id));
+    body.querySelector("[data-delete]").addEventListener("click", () => promptDeleteItem(item.id, item.name || "this item"));
+    card.appendChild(body);
 
-      if (currentFilterSelection) groupFilter.value = currentFilterSelection;
-      if (currentFormSelection) partyGroupSelect.value = currentFormSelection;
-    }
+    itemsGrid.appendChild(card);
+  });
+}
 
-    window.promptDeleteGroup = (id) => {
-      deleteTarget = { id: id, type: 'group' };
-      deleteModalMessage.innerText = "This party group will be permanently deleted.";
-      deleteModal.classList.remove("hidden");
-    };
-
-    window.deleteItem = (id) => {
-      deleteTarget = { id: id, type: 'item' };
-      deleteModalMessage.innerText = "This item will be permanently deleted.";
-      deleteModal.classList.remove("hidden");
-    };
-
-    confirmDeleteBtn.addEventListener("click", async () => {
-      if (!deleteTarget.id || !deleteTarget.type || !db) return;
-
-      const { id, type } = deleteTarget;
-      confirmDeleteBtn.disabled = true;
-
-      try {
-        if (type === 'item') await deleteDoc(doc(db, "items", id));
-        else if (type === 'group') await deleteDoc(doc(db, "party_groups", id));
-      } catch (error) {
-        alert("Delete error: " + error.message);
-      } finally {
-        confirmDeleteBtn.disabled = false;
-        deleteModal.classList.add("hidden");
-        deleteTarget = { id: null, type: null };
-      }
-    });
-
-    if (itemsCollection) {
-      const q = query(itemsCollection, orderBy("createdAt", "desc"));
-      onSnapshot(q, (snapshot) => {
-        itemsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderItems();
-      }, err => console.error("Items Sync Error:", err));
-    }
-
-    function renderItems() {
-      const searchTerm = searchInput.value.toLowerCase();
-      const selectedGroup = groupFilter.value;
-
-      const filteredItems = itemsData.filter(item => {
-        const itemName = item.name ? item.name.toLowerCase() : "";
-        const matchesSearch = itemName.includes(searchTerm);
-        const matchesGroup = selectedGroup === "ALL" || item.partyGroup === selectedGroup;
-        return matchesSearch && matchesGroup;
-      });
-
-      itemsGrid.innerHTML = "";
-
-      if (filteredItems.length === 0) {
-        emptyState.classList.remove("hidden");
-        return;
-      }
-
-      emptyState.classList.add("hidden");
-
-      filteredItems.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition flex flex-col";
-
-        const images = Array.isArray(item.images) && item.images.length > 0 ? item.images : ['https://via.placeholder.com/300x200?text=No+Image'];
-        const mainImage = images[0];
-        const imageThumbnails = images.length > 1 
-          ? `<div class="flex gap-1 p-2 overflow-x-auto bg-gray-50 border-t">
-              ${images.map(img => `<img src="${img}" class="w-10 h-10 object-cover rounded border border-gray-200 flex-shrink-0" />`).join('')}
-             </div>`
-          : '';
-
-        const rate = typeof item.purchaseRate === 'number' ? item.purchaseRate : 0;
-
-        card.innerHTML = `
-          <div class="h-48 w-full bg-gray-100 relative">
-            <img src="${mainImage}" alt="${item.name || 'Item'}" class="w-full h-full object-cover" />
-            <span class="absolute top-2 right-2 bg-slate-900/80 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm font-medium">
-              ${item.partyGroup || 'General'}
-            </span>
-          </div>
-          ${imageThumbnails}
-          <div class="p-4 flex-1 flex flex-col justify-between">
-            <div>
-              <h3 class="font-bold text-gray-900 text-lg mb-1">${item.name || 'Unnamed Item'}</h3>
-            </div>
-            <div class="mt-4 pt-3 border-t flex justify-between items-center">
-              <div>
-                <span class="text-xs text-gray-500 uppercase font-semibold block">Purchase Rate</span>
-                <span class="text-indigo-600 font-bold text-lg">₹${rate.toLocaleString('en-IN')}</span>
-              </div>
-              <div class="flex gap-2">
-                <button onclick="editItem('${item.id}')" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                </button>
-                <button onclick="deleteItem('${item.id}')" class="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-        itemsGrid.appendChild(card);
-      });
-    }
-
-    window.editItem = (id) => {
-      const item = itemsData.find(i => i.id === id);
-      if (!item) return;
-
-      itemIdInput.value = item.id;
-      document.getElementById("itemName").value = item.name || "";
-      document.getElementById("purchaseRate").value = item.purchaseRate || 0;
-      partyGroupSelect.value = item.partyGroup || "";
-
-      selectedImageFiles = Array.isArray(item.images) ? [...item.images] : [];
-      renderImagePreviews();
-
-      modalTitle.innerText = "Edit Item";
-      itemModal.classList.remove("hidden");
-    };
-
-    searchInput.addEventListener("input", renderItems);
-    groupFilter.addEventListener("change", renderItems);
-  </script>
+function editItem(id) {
+  const item = itemsData.find(i => i.id === id);
+  if (!item) return;
+  itemIdInput.value = item.id;
+  $("itemName").value = item.name || "";
+  $("purchaseRate").value = item.purchaseRate ?? 0;
+  partyGroupSelect.value = item.partyGroup || "General";
+  selectedImageFiles = Array.isArray(item.images) ? [...item.images] : [];
+  renderImagePreviews();
+  modalTitle.textContent = "Edit item";
+  openOverlay(itemModal);
+}
+</script>
 </body>
 </html>
