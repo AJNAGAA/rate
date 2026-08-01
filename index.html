@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Item Management Directory</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+      <h1 class="text-2xl font-bold tracking-tight flex items-center gap-2">
+        <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+        Item Directory
+      </h1>
+      <div class="flex gap-2 w-full md:w-auto">
+        <button id="openGroupModalBtn" class="w-1/2 md:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2 shadow-md text-sm">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
+          Manage Groups
+        </button>
+        <button id="openModalBtn" class="w-1/2 md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2 shadow-md text-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          Add New Item
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <section class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="relative md:col-span-2">
+          <input type="text" id="searchInput" placeholder="Search by item name..." class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" />
+          <svg class="w-5 h-5 absolute left-3 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <div>
+          <select id="groupFilter" class="w-full py-2.5 px-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+            <option value="ALL">All Party Groups</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div id="itemsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+      <div id="emptyState" class="hidden text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
+        <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+        <p class="text-gray-500 font-medium">No items found matching your criteria.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add / Edit Item Modal -->
+  <div id="itemModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-6 border-b pb-3">
+        <h2 id="modalTitle" class="text-xl font-bold text-gray-900">Add New Item</h2>
+        <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form id="addItemForm" class="space-y-4">
+        <input type="hidden" id="itemId" value="" />
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+          <input type="text" id="itemName" required placeholder="e.g. Wireless Mouse" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Purchase Rate (₹)</label>
+          <input type="number" step="0.01" id="purchaseRate" required placeholder="0.00" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-sm font-medium text-gray-700">Party Group</label>
+            <button type="button" id="quickAddGroupBtn" class="text-xs text-indigo-600 hover:underline font-medium">+ Add New Group</button>
+          </div>
+          <select id="partyGroup" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option value="">Select Group (Optional)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Item Images (Multiple photos)</label>
+          <input type="file" id="imageInput" multiple accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer mb-2" />
+          
+          <div id="imagePreviewContainer" class="grid grid-cols-4 gap-2 pt-2 border-t hidden"></div>
+          <p class="text-xs text-gray-400 mt-1">Photos will automatically auto-adjust size to fit under 1MB total limit.</p>
+        </div>
+
+        <button type="submit" id="saveBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition shadow">
+          Save Item
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Manage Party Groups Modal -->
+  <div id="groupModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl relative">
+      <div class="flex justify-between items-center mb-4 border-b pb-3">
+        <h2 class="text-lg font-bold text-gray-900">Manage Party Groups</h2>
+        <button id="closeGroupModalBtn" class="text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form id="addGroupForm" class="flex gap-2 mb-6">
+        <input type="text" id="newGroupName" required placeholder="Enter group name..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition">Add</button>
+      </form>
+
+      <h3 class="text-xs font-semibold uppercase text-gray-400 mb-2">Existing Groups</h3>
+      <div id="groupsList" class="max-h-48 overflow-y-auto space-y-1.5 border rounded-lg p-2 bg-gray-50"></div>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div id="deleteModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-500 mx-auto flex items-center justify-center text-xl mb-4">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+      </div>
+      <h3 class="text-lg font-bold text-gray-900 mb-1">Are you sure?</h3>
+      <p id="deleteModalMessage" class="text-sm text-gray-500 mb-6">This item will be permanently removed.</p>
+      <div class="flex gap-3">
+        <button id="cancelDeleteBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-xl transition text-sm">Cancel</button>
+        <button id="confirmDeleteBtn" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-medium py-2.5 rounded-xl transition text-sm shadow-md">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase JavaScript Module -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      addDoc, 
+      doc, 
+      updateDoc, 
+      deleteDoc, 
+      onSnapshot, 
+      query, 
+      orderBy 
+    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyB0ldphifJBVDNZdIXaz4QTJ98e_hSRYfg",
+  authDomain: "rate-bf39a.firebaseapp.com",
+  projectId: "rate-bf39a",
+  storageBucket: "rate-bf39a.firebasestorage.app",
+  messagingSenderId: "898189513913",
+  appId: "1:898189513913:web:7b5005b37bb49d7098f768"
+};
+
+    let db;
+    let itemsCollection;
+    let groupsCollection;
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      itemsCollection = collection(db, "items");
+      groupsCollection = collection(db, "party_groups");
+    } catch (err) {
+      console.error("Firebase Initialization Error:", err);
+    }
+
+    let itemsData = [];
+    let groupsData = [];
+    let selectedImageFiles = [];
+    let deleteTarget = { id: null, type: null };
+
+    const itemsGrid = document.getElementById("itemsGrid");
+    const emptyState = document.getElementById("emptyState");
+    const searchInput = document.getElementById("searchInput");
+    const groupFilter = document.getElementById("groupFilter");
+    
+    const itemModal = document.getElementById("itemModal");
+    const openModalBtn = document.getElementById("openModalBtn");
+    const closeModalBtn = document.getElementById("closeModalBtn");
+    const addItemForm = document.getElementById("addItemForm");
+    const modalTitle = document.getElementById("modalTitle");
+    const itemIdInput = document.getElementById("itemId");
+    const partyGroupSelect = document.getElementById("partyGroup");
+    const imageInput = document.getElementById("imageInput");
+    const imagePreviewContainer = document.getElementById("imagePreviewContainer");
+
+    const groupModal = document.getElementById("groupModal");
+    const openGroupModalBtn = document.getElementById("openGroupModalBtn");
+    const closeGroupModalBtn = document.getElementById("closeGroupModalBtn");
+    const addGroupForm = document.getElementById("addGroupForm");
+    const newGroupNameInput = document.getElementById("newGroupName");
+    const groupsList = document.getElementById("groupsList");
+    const quickAddGroupBtn = document.getElementById("quickAddGroupBtn");
+
+    const deleteModal = document.getElementById("deleteModal");
+    const deleteModalMessage = document.getElementById("deleteModalMessage");
+    const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+    const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+
+    openModalBtn.addEventListener("click", () => {
+      resetModalForm();
+      itemModal.classList.remove("hidden");
+    });
+    closeModalBtn.addEventListener("click", () => itemModal.classList.add("hidden"));
+
+    openGroupModalBtn.addEventListener("click", () => groupModal.classList.remove("hidden"));
+    quickAddGroupBtn.addEventListener("click", () => groupModal.classList.remove("hidden"));
+    closeGroupModalBtn.addEventListener("click", () => groupModal.classList.add("hidden"));
+
+    cancelDeleteBtn.addEventListener("click", () => {
+      deleteModal.classList.add("hidden");
+      deleteTarget = { id: null, type: null };
+    });
+
+    function resetModalForm() {
+      addItemForm.reset();
+      itemIdInput.value = "";
+      selectedImageFiles = [];
+      renderImagePreviews();
+      modalTitle.innerText = "Add New Item";
+    }
+
+    imageInput.addEventListener("change", (e) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length > 0) {
+        selectedImageFiles = [...selectedImageFiles, ...files];
+        renderImagePreviews();
+      }
+      imageInput.value = "";
+    });
+
+    function renderImagePreviews() {
+      imagePreviewContainer.innerHTML = "";
+      if (selectedImageFiles.length === 0) {
+        imagePreviewContainer.classList.add("hidden");
+        return;
+      }
+
+      imagePreviewContainer.classList.remove("hidden");
+
+      selectedImageFiles.forEach((item, index) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "relative rounded-lg overflow-hidden border border-gray-200 aspect-square bg-gray-100";
+
+        const img = document.createElement("img");
+        img.className = "w-full h-full object-cover";
+        img.src = typeof item === 'string' ? item : URL.createObjectURL(item);
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "absolute top-1 right-1 bg-rose-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs shadow hover:bg-rose-700 transition";
+        removeBtn.innerText = "×";
+        removeBtn.onclick = () => {
+          selectedImageFiles.splice(index, 1);
+          renderImagePreviews();
+        };
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(removeBtn);
+        imagePreviewContainer.appendChild(wrapper);
+      });
+    }
+
+    // Helper: Single Image Compress
+    const compressSingleImage = (item, maxWidth, quality) => {
+      return new Promise((resolve, reject) => {
+        if (typeof item === 'string') return resolve(item);
+        
+        const reader = new FileReader();
+        reader.readAsDataURL(item);
+        reader.onload = (e) => {
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", quality));
+          };
+          img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+      });
+    };
+
+    // Smart Dynamic Compression: Divides image resolutions & quality proportionally to fit under 800 KB safely
+    const compressImagesToFitLimit = async (filesList) => {
+      const count = filesList.length;
+      let maxWidth = 800;
+      let quality = 0.7;
+
+      // Adjust settings dynamically based on image count
+      if (count > 12) {
+        maxWidth = 250;
+        quality = 0.25;
+      } else if (count > 8) {
+        maxWidth = 350;
+        quality = 0.35;
+      } else if (count > 4) {
+        maxWidth = 450;
+        quality = 0.5;
+      } else if (count > 2) {
+        maxWidth = 600;
+        quality = 0.6;
+      }
+
+      let compressedResults = await Promise.all(
+        filesList.map(file => compressSingleImage(file, maxWidth, quality))
+      );
+
+      // Verify payload total size under 850 KB limit
+      let totalBytes = new Blob([JSON.stringify(compressedResults)]).size;
+      
+      // Secondary fallback loop if size still exceeds threshold
+      while (totalBytes > 850 * 1024 && maxWidth > 150) {
+        maxWidth -= 50;
+        quality -= 0.05;
+        compressedResults = await Promise.all(
+          filesList.map(file => compressSingleImage(file, maxWidth, quality))
+        );
+        totalBytes = new Blob([JSON.stringify(compressedResults)]).size;
+      }
+
+      return compressedResults;
+    };
+
+    // Firebase Save Logic
+    addItemForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!itemsCollection) return;
+
+      const saveBtn = document.getElementById("saveBtn");
+      saveBtn.disabled = true;
+      saveBtn.innerText = "Compressing & Saving...";
+
+      try {
+        const id = itemIdInput.value || null;
+        const name = document.getElementById("itemName").value || "";
+        const rate = parseFloat(document.getElementById("purchaseRate").value) || 0;
+        const group = partyGroupSelect.value || "General";
+
+        let imagesBase64 = [];
+        if (selectedImageFiles.length > 0) {
+          imagesBase64 = await compressImagesToFitLimit(selectedImageFiles);
+        }
+
+        const payload = {
+          name: name,
+          purchaseRate: rate,
+          partyGroup: group,
+          images: imagesBase64.length > 0 ? imagesBase64 : ["https://via.placeholder.com/300x200?text=No+Image"]
+        };
+
+        if (id) {
+          await updateDoc(doc(db, "items", id), payload);
+        } else {
+          payload.createdAt = new Date().toISOString();
+          await addDoc(itemsCollection, payload);
+        }
+
+        resetModalForm();
+        itemModal.classList.add("hidden");
+      } catch (error) {
+        console.error("Save error:", error);
+        alert("Error saving item: " + error.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerText = "Save Item";
+      }
+    });
+
+    // Group Submit
+    addGroupForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const groupName = newGroupNameInput.value.trim();
+      if (!groupName || !groupsCollection) return;
+
+      try {
+        await addDoc(groupsCollection, {
+          name: groupName,
+          createdAt: new Date().toISOString()
+        });
+        newGroupNameInput.value = "";
+      } catch (error) {
+        alert("Group save error: " + error.message);
+      }
+    });
+
+    if (groupsCollection) {
+      const groupsQuery = query(groupsCollection, orderBy("name", "asc"));
+      onSnapshot(groupsQuery, (snapshot) => {
+        groupsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderGroupsUI();
+      }, err => console.error("Groups Sync Error:", err));
+    }
+
+    function renderGroupsUI() {
+      const currentFilterSelection = groupFilter.value;
+      const currentFormSelection = partyGroupSelect.value;
+
+      groupFilter.innerHTML = '<option value="ALL">All Party Groups</option>';
+      partyGroupSelect.innerHTML = '<option value="">Select Group (Optional)</option>';
+      groupsList.innerHTML = "";
+
+      if (groupsData.length === 0) {
+        groupsList.innerHTML = '<p class="text-xs text-gray-400 py-2 text-center">No party groups added yet.</p>';
+      }
+
+      groupsData.forEach(group => {
+        const groupName = group.name || "Unassigned";
+
+        groupFilter.add(new Option(groupName, groupName));
+        partyGroupSelect.add(new Option(groupName, groupName));
+
+        const groupRow = document.createElement("div");
+        groupRow.className = "flex justify-between items-center bg-white p-2 rounded border text-sm text-gray-700";
+        groupRow.innerHTML = `
+          <span>${groupName}</span>
+          <button onclick="promptDeleteGroup('${group.id}')" class="text-rose-500 hover:text-rose-700 p-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+          </button>
+        `;
+        groupsList.appendChild(groupRow);
+      });
+
+      if (currentFilterSelection) groupFilter.value = currentFilterSelection;
+      if (currentFormSelection) partyGroupSelect.value = currentFormSelection;
+    }
+
+    window.promptDeleteGroup = (id) => {
+      deleteTarget = { id: id, type: 'group' };
+      deleteModalMessage.innerText = "This party group will be permanently deleted.";
+      deleteModal.classList.remove("hidden");
+    };
+
+    window.deleteItem = (id) => {
+      deleteTarget = { id: id, type: 'item' };
+      deleteModalMessage.innerText = "This item will be permanently deleted.";
+      deleteModal.classList.remove("hidden");
+    };
+
+    confirmDeleteBtn.addEventListener("click", async () => {
+      if (!deleteTarget.id || !deleteTarget.type || !db) return;
+
+      const { id, type } = deleteTarget;
+      confirmDeleteBtn.disabled = true;
+
+      try {
+        if (type === 'item') await deleteDoc(doc(db, "items", id));
+        else if (type === 'group') await deleteDoc(doc(db, "party_groups", id));
+      } catch (error) {
+        alert("Delete error: " + error.message);
+      } finally {
+        confirmDeleteBtn.disabled = false;
+        deleteModal.classList.add("hidden");
+        deleteTarget = { id: null, type: null };
+      }
+    });
+
+    if (itemsCollection) {
+      const q = query(itemsCollection, orderBy("createdAt", "desc"));
+      onSnapshot(q, (snapshot) => {
+        itemsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderItems();
+      }, err => console.error("Items Sync Error:", err));
+    }
+
+    function renderItems() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const selectedGroup = groupFilter.value;
+
+      const filteredItems = itemsData.filter(item => {
+        const itemName = item.name ? item.name.toLowerCase() : "";
+        const matchesSearch = itemName.includes(searchTerm);
+        const matchesGroup = selectedGroup === "ALL" || item.partyGroup === selectedGroup;
+        return matchesSearch && matchesGroup;
+      });
+
+      itemsGrid.innerHTML = "";
+
+      if (filteredItems.length === 0) {
+        emptyState.classList.remove("hidden");
+        return;
+      }
+
+      emptyState.classList.add("hidden");
+
+      filteredItems.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition flex flex-col";
+
+        const images = Array.isArray(item.images) && item.images.length > 0 ? item.images : ['https://via.placeholder.com/300x200?text=No+Image'];
+        const mainImage = images[0];
+        const imageThumbnails = images.length > 1 
+          ? `<div class="flex gap-1 p-2 overflow-x-auto bg-gray-50 border-t">
+              ${images.map(img => `<img src="${img}" class="w-10 h-10 object-cover rounded border border-gray-200 flex-shrink-0" />`).join('')}
+             </div>`
+          : '';
+
+        const rate = typeof item.purchaseRate === 'number' ? item.purchaseRate : 0;
+
+        card.innerHTML = `
+          <div class="h-48 w-full bg-gray-100 relative">
+            <img src="${mainImage}" alt="${item.name || 'Item'}" class="w-full h-full object-cover" />
+            <span class="absolute top-2 right-2 bg-slate-900/80 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm font-medium">
+              ${item.partyGroup || 'General'}
+            </span>
+          </div>
+          ${imageThumbnails}
+          <div class="p-4 flex-1 flex flex-col justify-between">
+            <div>
+              <h3 class="font-bold text-gray-900 text-lg mb-1">${item.name || 'Unnamed Item'}</h3>
+            </div>
+            <div class="mt-4 pt-3 border-t flex justify-between items-center">
+              <div>
+                <span class="text-xs text-gray-500 uppercase font-semibold block">Purchase Rate</span>
+                <span class="text-indigo-600 font-bold text-lg">₹${rate.toLocaleString('en-IN')}</span>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="editItem('${item.id}')" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                </button>
+                <button onclick="deleteItem('${item.id}')" class="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        itemsGrid.appendChild(card);
+      });
+    }
+
+    window.editItem = (id) => {
+      const item = itemsData.find(i => i.id === id);
+      if (!item) return;
+
+      itemIdInput.value = item.id;
+      document.getElementById("itemName").value = item.name || "";
+      document.getElementById("purchaseRate").value = item.purchaseRate || 0;
+      partyGroupSelect.value = item.partyGroup || "";
+
+      selectedImageFiles = Array.isArray(item.images) ? [...item.images] : [];
+      renderImagePreviews();
+
+      modalTitle.innerText = "Edit Item";
+      itemModal.classList.remove("hidden");
+    };
+
+    searchInput.addEventListener("input", renderItems);
+    groupFilter.addEventListener("change", renderItems);
+  </script>
+</body>
+</html>
