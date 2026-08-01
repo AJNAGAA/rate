@@ -192,6 +192,24 @@
   @media (prefers-reduced-motion: reduce){
     .card, .toast{transition:none;animation:none;}
   }
+
+  .skeleton-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;}
+  .skeleton-card{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .skeleton-card .sk-photo{height:150px;background:linear-gradient(90deg,#e7e9e1 25%,#f1f2ec 37%,#e7e9e1 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite;}
+  .skeleton-card .sk-line{height:11px;border-radius:4px;background:linear-gradient(90deg,#e7e9e1 25%,#f1f2ec 37%,#e7e9e1 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite;margin:14px;}
+  .skeleton-card .sk-line.short{width:55%;}
+  @keyframes shimmer{0%{background-position:100% 0;}100%{background-position:-100% 0;}}
+  @media (prefers-reduced-motion: reduce){
+    .sk-photo, .sk-line{animation:none;}
+  }
+
+  .lightbox{position:fixed;inset:0;background:rgba(10,14,12,.9);z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out;}
+  .lightbox.hidden{display:none;}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.5);}
+  .photo img{cursor:zoom-in;}
+
+  .group-row input[type=text]{flex:1;padding:5px 8px;border:1px solid var(--teal);border-radius:5px;font-family:'Inter';font-size:13.5px;margin-right:8px;}
+  .group-row .actions{display:flex;gap:4px;}
 </style>
 </head>
 <body>
@@ -218,14 +236,24 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
       <input type="text" id="searchInput" placeholder="Search items…" autocomplete="off" />
     </div>
-    <div class="field">
+    <div class="field" style="flex:0 0 190px;">
       <select id="groupFilter"><option value="ALL">All party groups</option></select>
     </div>
+    <div class="field" style="flex:0 0 170px;">
+      <select id="sortSelect">
+        <option value="newest">Newest first</option>
+        <option value="name-asc">Name A–Z</option>
+        <option value="name-desc">Name Z–A</option>
+        <option value="rate-asc">Rate: low to high</option>
+        <option value="rate-desc">Rate: high to low</option>
+      </select>
+    </div>
+    <button id="exportCsvBtn" class="btn btn-outline" type="button">Export CSV</button>
   </div>
 
   <div class="summary-strip" id="summaryStrip"></div>
 
-  <div id="loadingState" class="loading">Loading register…</div>
+  <div id="loadingState" class="skeleton-grid"></div>
   <div id="itemsGrid" style="display:none;"></div>
   <div id="emptyState" class="empty" style="display:none;">
     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
@@ -307,6 +335,7 @@
 </div>
 
 <div class="toast-stack" id="toastStack"></div>
+<div class="lightbox hidden" id="lightbox"><img id="lightboxImg" src="" alt="Full size photo" /></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
@@ -355,7 +384,10 @@ const emptyState = $("emptyState");
 const emptyMessage = $("emptyMessage");
 const searchInput = $("searchInput");
 const groupFilter = $("groupFilter");
+const sortSelect = $("sortSelect");
 const summaryStrip = $("summaryStrip");
+const lightbox = $("lightbox");
+const lightboxImg = $("lightboxImg");
 
 const itemModal = $("itemModal");
 const addItemForm = $("addItemForm");
@@ -379,6 +411,29 @@ function escapeHtml(str) {
   ));
 }
 
+function openLightbox(src) {
+  lightboxImg.src = src;
+  lightbox.classList.remove("hidden");
+}
+lightbox.addEventListener("click", () => { lightbox.classList.add("hidden"); lightboxImg.src = ""; });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !lightbox.classList.contains("hidden")) {
+    lightbox.classList.add("hidden"); lightboxImg.src = "";
+  }
+});
+
+function renderSkeleton() {
+  const count = 8;
+  loadingState.innerHTML = Array.from({ length: count }).map(() => `
+    <div class="skeleton-card">
+      <div class="sk-photo"></div>
+      <div class="sk-line"></div>
+      <div class="sk-line short"></div>
+    </div>
+  `).join("");
+}
+renderSkeleton();
+
 function showToast(message, isError = false) {
   const el = document.createElement("div");
   el.className = "toast" + (isError ? " error" : "");
@@ -400,7 +455,11 @@ document.querySelectorAll("[data-close]").forEach(btn => {
   btn.addEventListener("click", () => closeOverlay($(btn.dataset.close)));
 });
 
-$("openModalBtn").addEventListener("click", () => { resetModalForm(); openOverlay(itemModal); });
+$("openModalBtn").addEventListener("click", () => {
+  resetModalForm();
+  openOverlay(itemModal);
+  setTimeout(() => $("itemName").focus(), 50);
+});
 $("openGroupModalBtn").addEventListener("click", () => openOverlay(groupModal));
 $("quickAddGroupBtn").addEventListener("click", () => openOverlay(groupModal));
 $("cancelDeleteBtn").addEventListener("click", () => {
@@ -577,18 +636,78 @@ function renderGroupsUI() {
     row.className = "group-row";
     const label = document.createElement("span");
     label.textContent = name;
-    const btn = document.createElement("button");
-    btn.className = "icon-btn danger";
-    btn.style.width = "28px"; btn.style.height = "28px";
-    btn.setAttribute("aria-label", `Delete group ${name}`);
-    btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>';
-    btn.addEventListener("click", () => promptDeleteGroup(group.id, name));
-    row.append(label, btn);
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "icon-btn";
+    editBtn.style.width = "28px"; editBtn.style.height = "28px";
+    editBtn.setAttribute("aria-label", `Rename group ${name}`);
+    editBtn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>';
+    editBtn.addEventListener("click", () => startRenameGroup(row, group.id, name));
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "icon-btn danger";
+    delBtn.style.width = "28px"; delBtn.style.height = "28px";
+    delBtn.setAttribute("aria-label", `Delete group ${name}`);
+    delBtn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>';
+    delBtn.addEventListener("click", () => promptDeleteGroup(group.id, name));
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    actions.append(editBtn, delBtn);
+    row.append(label, actions);
     groupsList.appendChild(row);
   });
 
   if (currentFilter) groupFilter.value = currentFilter;
   if (currentForm) partyGroupSelect.value = currentForm;
+}
+
+function startRenameGroup(row, id, oldName) {
+  row.innerHTML = "";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = oldName;
+  input.maxLength = 60;
+
+  const save = document.createElement("button");
+  save.className = "btn btn-primary";
+  save.style.padding = "6px 10px";
+  save.style.fontSize = "12.5px";
+  save.textContent = "Save";
+
+  const cancel = document.createElement("button");
+  cancel.className = "btn btn-outline";
+  cancel.style.padding = "6px 10px";
+  cancel.style.fontSize = "12.5px";
+  cancel.textContent = "Cancel";
+  cancel.type = "button";
+  cancel.addEventListener("click", () => renderGroupsUI());
+
+  save.addEventListener("click", async () => {
+    const newName = input.value.trim();
+    if (!newName) return showToast("Group name can't be empty.", true);
+    if (newName === oldName) return renderGroupsUI();
+    if (groupsData.some(g => g.id !== id && (g.name || "").toLowerCase() === newName.toLowerCase())) {
+      return showToast("A group with that name already exists.", true);
+    }
+    save.disabled = true;
+    try {
+      await updateDoc(doc(db, "party_groups", id), { name: newName });
+      const affected = itemsData.filter(i => i.partyGroup === oldName);
+      await Promise.all(affected.map(i => updateDoc(doc(db, "items", i.id), { partyGroup: newName })));
+      showToast("Group renamed.");
+    } catch (error) {
+      showToast("Rename failed: " + error.message, true);
+      renderGroupsUI();
+    }
+  });
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  actions.append(save, cancel);
+  row.append(input, actions);
+  input.focus();
+  input.select();
 }
 
 function promptDeleteGroup(id, name) {
@@ -651,20 +770,37 @@ searchInput.addEventListener("input", () => {
   searchDebounce = setTimeout(renderItems, 150);
 });
 groupFilter.addEventListener("change", renderItems);
+sortSelect.addEventListener("change", renderItems);
+
+$("exportCsvBtn").addEventListener("click", () => {
+  if (!itemsLoaded || !itemsData.length) return showToast("Nothing to export yet.", true);
+  const rows = [["Item Name", "Party Group", "Purchase Rate (INR)"]];
+  getVisibleItems().forEach(i => rows.push([i.name || "", i.partyGroup || "General", (i.purchaseRate || 0).toString()]));
+  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `stock-register-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("CSV exported.");
+});
 
 function renderSummary(items) {
   const total = items.length;
-  const avg = total ? items.reduce((s, i) => s + (i.purchaseRate || 0), 0) / total : 0;
+  const sum = items.reduce((s, i) => s + (i.purchaseRate || 0), 0);
+  const avg = total ? sum / total : 0;
   const groupsUsed = new Set(items.map(i => i.partyGroup || "General")).size;
   summaryStrip.innerHTML = `
     <div class="cell"><div class="label">Items shown</div><div class="value mono">${total}</div></div>
     <div class="cell"><div class="label">Avg. purchase rate</div><div class="value mono">₹${avg.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div></div>
+    <div class="cell"><div class="label">Total value</div><div class="value mono">₹${sum.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div></div>
     <div class="cell"><div class="label">Party groups in view</div><div class="value mono">${groupsUsed}</div></div>
   `;
 }
 
-function renderItems() {
-  if (!itemsLoaded) return;
+function getVisibleItems() {
   const term = searchInput.value.trim().toLowerCase();
   const selectedGroup = groupFilter.value;
 
@@ -676,6 +812,19 @@ function renderItems() {
     return matchesSearch && matchesGroup;
   });
 
+  const sortBy = sortSelect.value;
+  const sorted = [...filtered];
+  if (sortBy === "name-asc") sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  else if (sortBy === "name-desc") sorted.sort((a, b) => (b.name || "").localeCompare(a.name || ""));
+  else if (sortBy === "rate-asc") sorted.sort((a, b) => (a.purchaseRate || 0) - (b.purchaseRate || 0));
+  else if (sortBy === "rate-desc") sorted.sort((a, b) => (b.purchaseRate || 0) - (a.purchaseRate || 0));
+  // "newest" keeps the createdAt-desc order items already arrive in from Firestore
+  return sorted;
+}
+
+function renderItems() {
+  if (!itemsLoaded) return;
+  const filtered = getVisibleItems();
   renderSummary(filtered);
   itemsGrid.innerHTML = "";
 
@@ -702,6 +851,8 @@ function renderItems() {
     photo.className = "photo";
     photo.innerHTML = `<img src="${images[0]}" alt="${escapeHtml(item.name || 'Item')}" loading="lazy" />
       <span class="stamp">${escapeHtml(groupName)}</span>`;
+    const mainImg = photo.querySelector("img");
+    mainImg.addEventListener("click", () => openLightbox(mainImg.src));
     card.appendChild(photo);
 
     if (images.length > 1) {
